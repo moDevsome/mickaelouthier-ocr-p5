@@ -2,7 +2,7 @@
  * Insère les information détaillée du produit dans le DOM
  * @retun void
  */
- function insertProduct(product) {
+ function insertProduct(product, inputQuantityMin) {
 
     if(typeof(product) === "object") {
 
@@ -46,6 +46,9 @@
             colorsSelect.options.add(option);
 
         });
+
+        // Gestion du champ <input> #quantity
+        document.getElementById('quantity').value = inputQuantityMin;
 
     }
 
@@ -155,8 +158,21 @@ async function getProduct() {
  */
  async function load() {
 
+    // On récupère les valeurs "min" et "max" de l'objet du noeud input#quantity
+    // Ces valeurs seront utilisées dans les fonctions "insertProduct" et "submitProduct"
+    let inputQuantity = document.getElementById('quantity');
+    const inputQuantityMin = parseInt(inputQuantity.getAttribute('min') ?? 0);
+    const inputQuantityMax = parseInt(inputQuantity.getAttribute('max') ?? 0);
+
+    if((isNaN(inputQuantityMin) || isNaN(inputQuantityMax)) || (inputQuantityMin <= 0 || inputQuantityMax <= 0)) {
+
+        console.error('Erreur de paramétrage du champ "quantity", la valeur des attributs "max" et "min" doit être un nombre supérieur à 0.');
+        return;
+
+    }
+
     let product = await getProduct();
-    insertProduct(product);
+    insertProduct(product, inputQuantityMin);
 
 }
 
