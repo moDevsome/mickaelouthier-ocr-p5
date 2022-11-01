@@ -1,4 +1,108 @@
 /**
+ * Ajoute le produit dans le panier après validation de la quantité, puis redirige l'utilisateur vers la page de confirmation
+* @retun void
+ */
+function submitProduct(product, inputQuantityMin, inputQuantityMax) {
+
+    const localStorageKey = 'kanap-cart';
+    let errors = [];
+
+    // Vérification du champ "couleur", la couleur sélectionnée doit faire partie des couleurs retournées par l'API
+    let colorsField = document.getElementById('colors');
+    let selectedColor = colorsField.value;
+    if(!product.colors.map(color => color.toLowerCase()).includes(selectedColor)) {
+
+        colorsField.options.selectedIndex = 0;
+        errors.push('Merci de sélectionner une couleur.');
+
+    }
+
+    // Vérification du champ "quantité", la quantité doit un nombre compris entre la valeur de l'attribut "min" et la valeur de l'attribut "max" du noeud input#quantity
+    let providedQuantity = parseInt(document.getElementById('quantity').value);
+    if(isNaN(providedQuantity) || (providedQuantity < inputQuantityMin || providedQuantity > inputQuantityMax)) {
+
+        document.getElementById('quantity').value = inputQuantityMin;
+        errors.push('Merci de renseigner une quantité comprise entre '+ inputQuantityMin +' et '+ inputQuantityMax+ '.');
+
+    }
+
+    // Gestion des erreurs détecté, le panier ne peut pas etre mis à jour
+    if(errors.length > 0) {
+
+        alert(errors.join('\n'));
+        return;
+
+    }
+    else {
+
+        /*
+        * On continue vers l'ajout du produit dans le panier
+        */
+
+        // On récupère l'objet panier courant dans le localstorage
+        let cartObject = {};
+        let cartObjectString = localStorage.getItem(localStorageKey) ?? '';
+        if(cartObjectString.length > 0) {
+
+            try {
+
+                cartObject = JSON.parse(cartObjectString);
+
+            }
+            catch(error) {
+
+                console.error(error);
+                return;
+
+            }
+
+        }
+
+        if(cartObject.hasOwnProperty(product._id)) { // Ce produit est déjà dans le panier
+
+            // On vérifie si la couleur sélectionnée est déjà présente
+            if(cartObject[product._id].hasOwnProperty(selectedColor)) { // la couleur est déjà présente, donc on incrémente la quantité
+
+                cartObject[product._id][selectedColor] += providedQuantity;
+
+            }
+            else { // la couleur n'est pas présente, on ajoute la couleur avec la quantité
+
+                cartObject[product._id][selectedColor] = providedQuantity;
+
+            }
+
+        }
+        else { // Le produit n'est pas encore dans le panier
+
+            let productObj = {};
+            productObj[selectedColor] = providedQuantity;
+
+            cartObject[product._id] = productObj;
+
+        }
+
+        // On réinjecte le panier à jour dans le localStorage
+        try {
+
+            localStorage.setItem(localStorageKey, JSON.stringify(cartObject));
+
+        }
+        catch(error) {
+
+            console.error(error);
+            alert('L\'application a rencontré une erreur et n\'a pas pu mettre votre panier à jour, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à réessayer l\'opération ultérieurement.');
+
+        }
+
+        // On termine par la redirection de l'utilisateur vers la page de commande "cart.html"
+        document.location.href = "./cart.html";
+
+    }
+
+}
+
+/**
  * Insère les information détaillée du produit dans le DOM
  * @retun void
  */
@@ -115,6 +219,7 @@ async function getProduct() {
             const dataObjectProperties = Object.getOwnPropertyNames(data);
             let badProperties = [];
 
+            // TODO:revoir cette partie un utilisant la méthode statique "Object.prototype.hasOwnProperty()"
             for(prop of Object.getOwnPropertyNames(expectedPropeties)) {
 
                 if(!dataObjectProperties.includes(prop)) {
@@ -171,8 +276,19 @@ async function getProduct() {
 
     }
 
-    let product = await getProduct();
+    const product = await getProduct();
     insertProduct(product, inputQuantityMin);
+
+    // On ajoute un écouteur d'évenement de type "click" sur le bouton button#addToCart
+    // le clic va déclencher l'ajout du produit dans le panier via la fonction "submitProduct"
+    document.getElementById('addToCart').addEventListener('click', (event) => {
+
+        event.stopPropagation();
+        event.preventDefault();
+        submitProduct(product, inputQuantityMin, inputQuantityMax);
+
+        return false;
+    })
 
 }
 
