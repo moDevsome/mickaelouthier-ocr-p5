@@ -216,21 +216,23 @@ async function getProduct() {
                 description: 'string',
                 altTxt: 'string'
             }
-            const dataObjectProperties = Object.getOwnPropertyNames(data);
+            // const dataObjectProperties = Object.getOwnPropertyNames(data);
             let badProperties = [];
 
-            // TODO:revoir cette partie un utilisant la méthode statique "Object.prototype.hasOwnProperty()"
             for(prop of Object.getOwnPropertyNames(expectedPropeties)) {
 
-                if(!dataObjectProperties.includes(prop)) {
+                if(!data.hasOwnProperty(prop)) {
 
                     badProperties.push('La propriété "'+ prop +'" n\'est pas présente dans l\'objet reçu.');
 
                 }
+                else {
 
-                if(typeof(data[prop]) !== expectedPropeties[prop]) {
+                    if(typeof(data[prop]) !== expectedPropeties[prop]) {
 
-                    badProperties.push('Le type de la propriété "'+ prop +'" présente dans l\'objet reçu ('+ typeof(data[prop]) +') ne correspond pas au type attendu ('+ expectedPropeties[prop] +').');
+                        badProperties.push('Le type de la propriété "'+ prop +'" présente dans l\'objet reçu ('+ typeof(data[prop]) +') ne correspond pas au type attendu ('+ expectedPropeties[prop] +').');
+
+                    }
 
                 }
 
