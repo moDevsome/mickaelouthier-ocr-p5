@@ -92,6 +92,7 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 
             console.error(error);
             alert('L\'application a rencontré une erreur et n\'a pas pu mettre votre panier à jour, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à réessayer l\'opération ultérieurement.');
+            // TODO:ajouter un returns
 
         }
 
