@@ -36,6 +36,9 @@ function insertItems(products) {
 
     }
 
+    // Initialisation de la quantité total et du prix total avant la boucle
+    let totalQuantity = 0;
+    let totalPrice = 0;
 
     /**
      * Insertion des produits dans la <section> #cart__items
@@ -45,39 +48,119 @@ function insertItems(products) {
 
         if(cartContent.hasOwnProperty(product._id)) { // le produit se trouve dans le panier
 
-            console.log(cartContent[product._id], product);
+            product.colors.forEach(color => {
 
-            // TODO : Ne fonctionne pas "TypeError: cartContent[product._id].forEach is not a function"
-            cartContent[product._id].forEach(row => {
+                let colorIndex = color.toLowerCase();
 
-                console.log(row);
+                if(cartContent[product._id].hasOwnProperty(colorIndex)) {
 
-                /*
-                // Gestion de l'image du produit <img> dans une <div> .cart__item__img
-                let productImgNode = document.createElement('img');
-                productImgNode.src = product.imageUrl;
-                productImgNode.alt = product.altTxt;
-                let productImgParentNode = document.createElement('div');
-                productImgParentNode.classList.add('cart__item__img');
-                productImgParentNode.appendChild(productImgNode);
+                    console.log(product.name, product.price);
 
-                // Gestion du nom du produit <h2>
-                let productNameNode = document.createElement('h2');
-                productNameNode.textContent = product.name;
+                    // Gestion de l'image du produit <img> dans une <div> .cart__item__img
+                    let productImgNode = document.createElement('img');
+                    productImgNode.src = product.imageUrl;
+                    productImgNode.alt = product.altTxt;
+                    let productImgParentNode = document.createElement('div');
+                    productImgParentNode.classList.add('cart__item__img');
+                    productImgParentNode.appendChild(productImgNode);
 
-                // Gestion de la couleur du produit <p>
-                let productColorNode = document.createElement('p');
+                    // Gestion du nom du produit <h2>
+                    let productNameNode = document.createElement('h2');
+                    productNameNode.textContent = product.name;
 
-                / ... /
+                    // Gestion de la couleur du produit <p>
+                    let productColorNode = document.createElement('p');
+                    productColorNode.textContent = color;
 
-                // Insertion dans la section
-                cartSection.appendChild(productNode);
-                */
+                    // Gestion du prix <p>
+                    let productPriceNode = document.createElement('p');
+                    productPriceNode.textContent = product.price + ' €';
+
+                    // Gestion de la description produit (englobe le nom, la couleur et le prix) <div>  .cart__item__content__description"
+                    let productDescriptionNode = document.createElement('div');
+                    productDescriptionNode.classList.add('cart__item__content__description');
+                    productDescriptionNode.appendChild(productNameNode);
+                    productDescriptionNode.appendChild(productColorNode);
+                    productDescriptionNode.appendChild(productPriceNode);
+
+                    // Gestion de la quantité <p>
+                    let productQuantityNode = document.createElement('p');
+                    productQuantityNode.textContent = 'Qté : '+ cartContent[product._id][colorIndex];
+
+                    // Gestion de l'input permettant de mettre à jour la quantité du produit <input> .itemQuantity
+                    let productQuantityInputNode = document.createElement('input');
+                    productQuantityInputNode.type = 'number';
+                    productQuantityInputNode.name = 'itemQuantity';
+                    productQuantityInputNode.min = 1;
+                    productQuantityInputNode.max = 100;
+                    productQuantityInputNode.value = cartContent[product._id][colorIndex];
+                    productQuantityInputNode.classList.add('itemQuantity');
+                    productQuantityInputNode.addEventListener('input', (event) => {
+
+                        // TODO:Développer la fonction permettant de mettre à jour la quantité
+                        alert('TODO:Développer la fonction permettant de mettre à jour la quantité');
+
+                    });
+
+                    // Gestion de la l'élement parent englobant la quantité et l'input permettant de la changer <div> .cart__item__content__settings__quantity
+                    let productQuantityParentNode = document.createElement('div');
+                    productQuantityParentNode.classList.add('cart__item__content__settings__quantity');
+                    productQuantityParentNode.appendChild(productQuantityNode);
+                    productQuantityParentNode.appendChild(productQuantityInputNode);
+
+                    // Gestion du bouton Supprimmer <p> .cart__item__content__settings__delete
+                    let productDeleteNode = document.createElement('p');
+                    productDeleteNode.classList.add('deleteItem');
+                    productDeleteNode.textContent = 'Supprimer';
+                    productDeleteNode.addEventListener('click', (event) => {
+
+                        // TODO:Développer la fonction permettant de retirer le panier du produit
+                        alert('TODO:Développer la fonction permettant de retirer le produit du panier');
+
+                    });
+
+                    // Gestion du parent du bouton Supprimmer <div> .cart__item__content__settings__delete
+                    let productDeleteParentNode = document.createElement('div');
+                    productDeleteParentNode.classList.add('cart__item__content__settings__delete');
+                    productDeleteParentNode.appendChild(productDeleteNode);
+
+                    // Gestion de la div englobant la quantité et le bouton supprimer <div> .cart__item__content__settings
+                    let productSettingsNode = document.createElement('div');
+                    productSettingsNode.classList.add('cart__item__content__settings');
+                    productSettingsNode.appendChild(productQuantityParentNode);
+                    productSettingsNode.appendChild(productDeleteParentNode);
+
+                    // Gestion de la div englobant la description et la quantité <div> .cart__item__content <div> .cart__item__content
+                    let productContentNode = document.createElement('div');
+                    productContentNode.classList.add('cart__item__content');
+                    productContentNode.appendChild(productDescriptionNode);
+                    productContentNode.appendChild(productSettingsNode);
+
+                    // Insertion dans la section
+                    let productNode = document.createElement('article');
+                    productNode.classList.add('cart__item');
+                    productNode.dataset.id = product._id;
+                    productNode.dataset.color = color;
+                    productNode.appendChild(productImgParentNode);
+                    productNode.appendChild(productContentNode);
+
+                    cartSection.appendChild(productNode);
+
+                    // Mise à jour de la quantité total et du prix total
+                    totalQuantity += cartContent[product._id][colorIndex];
+                    totalPrice += cartContent[product._id][colorIndex] * product.price;
+
+                }
+
             })
+
         }
 
     });
-    console.log(cartContent, products);
+
+    // Gestion de la quantité total et du prix total
+    document.getElementById('totalQuantity').textContent = totalQuantity;
+    document.getElementById('totalPrice').textContent = totalPrice;
 
 }
 
