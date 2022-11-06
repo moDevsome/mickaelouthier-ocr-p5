@@ -1,24 +1,26 @@
 /**
- * Récupère les élements du panier dans le localStorage et les insère dans le DOM
- * @retun void
+ * FONCTION A METTRE EN IMPORT
+ * Retourne un objet Panier dans lequel se trouve les élements à commanders
+ * @return Objet
  */
-function insertItems(products) {
+function selectCart() {
 
     const localStorageKey = 'kanap-cart';
+    const genericError = 'L\'application a rencontré une erreur et n\'a pas pu récupérer le contenu de votre panier, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.';
     let cartJSONString = '';
     let cartContent= {};
 
-    // On récupère la panier depuis le localStorage
+    // On récupère la panier depuis le localStorage, si l'élement n'existe pas la variable cartJSONString sera une chaine JSON vide
     try {
 
-        cartJSONString = localStorage.getItem(localStorageKey);
+        cartJSONString = localStorage.getItem(localStorageKey) ?? '{}';
 
     }
     catch(error) {
 
+        console.error('catch error in selectCart')
         console.error(error);
-        alert('L\'application a rencontré une erreur et n\'a pas pu mettre votre panier à jour, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à réessayer l\'opération ultérieurement.');
-        return;
+        throw genericError;
 
     }
 
@@ -30,8 +32,253 @@ function insertItems(products) {
     }
     catch(error) {
 
+        console.error('catch error in selectCart')
         console.error(error);
-        alert('L\'application a rencontré une erreur et n\'a pas pu mettre votre panier à jour, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à réessayer l\'opération ultérieurement.');
+        throw genericError;
+
+    }
+
+    return cartContent;
+
+}
+
+/**
+ * FONCTION A METTRE EN IMPORT
+ * Supprime le panier courant en retirant les données du localStorage
+ * @return void
+ */
+ function deleteCart() {
+
+    const localStorageKey = 'kanap-cart';
+
+    try {
+
+        localStorage.removeItem(localStorageKey);
+
+    }
+    catch(error) {
+
+        console.error('catch error in deleteCart() => '+ error);
+
+    }
+
+    return;
+
+}
+
+
+/**
+ * Fonction permettant de tester si la chaine contient des caractères spéciaux
+ * L'array exclude permet de spécifier des caractères à ignorer
+ * @param String string_to_test
+ * @param Array exclude
+ * @return Bool TRUE si la chaine à tester contient au moins un caractère spécial, sinon FALSE
+ */
+function hasSpecialChar(string_to_test, exclude) {
+
+    let pattern = '!"\'#$€µ£%&()*+,./:;<=>-?§@^¨_`°{|}~ ][\\';
+
+    // Gestion des caractères non pris en compte
+    let excludeList = exclude ?? [];
+
+    // On parcours le pattern en recherchant chaque caractère dans la chaine à tester
+    let hasMatch = false;
+    pattern.split('').forEach(char => {
+
+        if(!excludeList.includes(char) && string_to_test.includes(char)) {
+
+            hasMatch = true;
+
+        }
+
+    });
+
+    return hasMatch;
+
+}
+
+/**
+ * Procède à la validation du panier
+ * Si les champs sont validés et que la commande est bien traitée par l'API, l'utilisateur est redirigé
+ * @return void
+ */
+async function orderSubmit() {
+
+    // Initialise l'objet "contact"
+    let contactObject = {};
+
+    // Vérification des champs du formulaire de contact
+    /**
+     * Les caractères spéciaux sont vérifiés via la fonction "hasSpecialChar"
+     */
+    const errorMessage = {
+        firstName: 'Le champ Prénom ne doit pas être vide et ne doit pas contenir de chiffre ni de caractère spécial.',
+        lastName: 'Le champ Nom ne doit pas être vide et ne doit pas contenir de chiffre ni de caractère spécial.',
+        address: 'Le champ Adresse ne doit pas être vide et ne doit pas contenir de caractère spécial.',
+        city: 'Le champ Ville ne doit pas être vide et ne doit pas contenir de chiffre ni de caractère spécial.',
+        email: 'Merci de renseigner une adresse Email valide.'
+    }
+
+    let hasError = false;
+    document.querySelectorAll('form.cart__order__form input').forEach(field => {
+
+        // Reset le contenu du <p> du message d'erreur avant vérification
+        let fieldErrorMsgNode = document.getElementById(field.name +'ErrorMsg') ?? {};
+        fieldErrorMsgNode.textContent = '';
+
+        switch(field.name) {
+
+            case 'firstName' :
+            case 'lastName' :
+            case 'city' :
+                // On autorise uniquement les lettres de l'alphabet, les apostrophes, les espaces et les tirets
+                if(field.value.length === 0 || (field.value.match('[0-9]') ?? []).length > 0 || hasSpecialChar(field.value, ['\'','-',' '])) {
+
+                    fieldErrorMsgNode.textContent = errorMessage[field.name];
+                    hasError = true;
+
+                }
+                else {
+
+                    contactObject[field.name] = field.value;
+
+                }
+                break;
+
+            case 'address' :
+                // On vérifie si la chaine contient des caractères spéciaux en excluant les apostrophes, les espaces et les tirets
+                if(field.value.length === 0 || hasSpecialChar(field.value, ['\'','-',' ','°'])) {
+
+                    fieldErrorMsgNode.textContent = errorMessage[field.name];
+                    hasError = true;
+
+                }
+                else {
+
+                    contactObject['address'] = field.value;
+
+                }
+                break;
+
+            case 'email' :
+                // On vérifie si le caractères "@" se trouve 1 fois dans la chaine, on vérifie également les caractères spéciaux en excluant les tirets, les underscores et les points
+                if(field.value.length === 0 || (field.value.split('@') ?? []).length !== 2 || hasSpecialChar(field.value, ['@','-','_','.'])) {
+
+                    fieldErrorMsgNode.textContent = errorMessage[field.name];
+                    hasError = true;
+
+                }
+                else {
+
+                    contactObject['email'] = field.value;
+
+                }
+                break;
+
+            default :
+                // Ne rien faire
+                break;
+
+        }
+
+    });
+
+    // Vérifie si le panier contient des élements
+    try {
+
+        cartProductsList = Object.keys(selectCart());
+
+    }
+    catch(error) {
+
+        alert(error);
+        return;
+
+    }
+
+    if(cartProductsList.length === 0) {
+
+        alert('Merci de sélectionner au moins un produit à commander.');
+        hasError = true;
+
+    }
+
+    if(hasError === true) return;
+
+    // La commande est envoyée à l'API pour validation
+    fetch('http://localhost:3000/api/products/order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contact: contactObject,
+                products: cartProductsList
+            })
+        })
+        .then((response) => {
+
+            /**
+             * Vérification du Code de réponse HTTP retourné par l'API (201 si OK), ainsi que du statut
+             * La nullabilité est gérée dans la condition
+             * On utilise une comparaison stricte pour pallier un éventuel problème de type
+             */
+            if((response.status ?? 500) === 201 && (response.ok ?? false) === true) {
+
+                return response.json();
+
+            }
+            else {
+
+                throw 'La condition "response.status === 201 && response.ok === true" vaut FALSE.';
+
+            }
+
+        })
+        .then((data) => {
+
+            if(!data.hasOwnProperty('orderId') || typeof(data['orderId']) !== 'string' || data['orderId'].length === 0) {
+
+                console.error('La condition "!data.hasOwnProperty(orderId) || typeof(data[orderId]) !== string || data[orderId].length === 0" retourne FALSE');
+                alert('L\'application a rencontré une erreur et n\'a pas pu valider le contenu de votre panier, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.');
+                return;
+
+            }
+
+            // On supprime le contenu du panier validé
+            deleteCart();
+
+            // On termine par la redirection de l'utilisateur vers la page de confirmation "confirmation.html"
+            document.location.href = './confirmation.html?orderId='+ data['orderId'];
+            return;
+
+        })
+        .catch((error) => {
+
+            console.error('orderSubmit fetch error => '+ error);
+            alert('L\'application a rencontré une erreur et n\'a pas pu valider le contenu de votre panier, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.');
+            return;
+
+        });
+
+}
+
+/**
+ * Récupère les élements du panier dans le localStorage et les insère dans le DOM
+ * @retun void
+ */
+function insertItems(products) {
+
+    // Récupère le contenu du panier
+    cartContent = {};
+    try {
+
+        cartContent = selectCart();
+
+    }
+    catch(error) {
+
+        alert(error);
         return;
 
     }
@@ -53,8 +300,6 @@ function insertItems(products) {
                 let colorIndex = color.toLowerCase();
 
                 if(cartContent[product._id].hasOwnProperty(colorIndex)) {
-
-                    console.log(product.name, product.price);
 
                     // Gestion de l'image du produit <img> dans une <div> .cart__item__img
                     let productImgNode = document.createElement('img');
@@ -233,6 +478,17 @@ async function load() {
 
     let products = await getProducts();
     insertItems(products);
+
+
+    document.getElementById('order').addEventListener('click', (event) => {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        orderSubmit();
+
+        return false;
+    });
 
 }
 
