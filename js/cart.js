@@ -1,3 +1,8 @@
+/** Définis la clé du panier dans le localStorage
+ * ATTENTION !!! doit être à jour sur chaque fichier
+ */
+const localStorageKey = 'kanap-cart';
+
 /**
  * FONCTION A METTRE EN IMPORT
  * Retourne un objet Panier dans lequel se trouve les élements à commanders
@@ -5,7 +10,6 @@
  */
 function selectCart() {
 
-    const localStorageKey = 'kanap-cart';
     const genericError = 'L\'application a rencontré une erreur et n\'a pas pu récupérer le contenu de votre panier, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.';
     let cartJSONString = '';
     let cartContent= {};
@@ -49,8 +53,6 @@ function selectCart() {
  */
  function deleteCart() {
 
-    const localStorageKey = 'kanap-cart';
-
     try {
 
         localStorage.removeItem(localStorageKey);
@@ -66,19 +68,20 @@ function selectCart() {
 
 }
 
-
 /**
- * Fonction permettant de tester si la chaine contient des caractères spéciaux
+ * ----------------------------------------------------------------------------------
+ * Fonction permettant de vérifier la présence de caractères spéciaux dans une chaine
  * L'array exclude permet de spécifier des caractères à ignorer
- * @param String string_to_test
- * @param Array exclude
- * @return Bool TRUE si la chaine à tester contient au moins un caractère spécial, sinon FALSE
+ *
+ * @param String string_to_test "La chaine de caractère à tester"
+ * @param Array exclude "Array contenant un ou plusieurs caractères à exclure du processus de vérification"
+ * @return Bool "TRUE si la chaine à tester contient au moins un caractère spécial, sinon FALSE"
  */
 function hasSpecialChar(string_to_test, exclude) {
 
     let pattern = '!"\'#$€µ£%&()*+,./:;<=>-?§@^¨_`°{|}~ ][\\';
 
-    // Gestion des caractères non pris en compte
+    // Gestion des caractères à exclure du processus de vérification
     let excludeList = exclude ?? [];
 
     // On parcours le pattern en recherchant chaque caractère dans la chaine à tester
@@ -94,6 +97,23 @@ function hasSpecialChar(string_to_test, exclude) {
     });
 
     return hasMatch;
+
+}
+
+/**
+ * ---------------------------------------------------------------------------------------------------------------------
+ * Fonction permettant de mettre à jour la quantité d'un produit dans le panier, en prenant en compte l'option "couleur"
+ *
+ * @param String productId "L'ID du produit dans le panier"
+ * @param String productColor "La valeur de l'option couleur"
+ * @param Number productQantity "La nouvelle quantité"
+ * @return void
+ */
+function updateProductQuantity(productId, productColor, productQantity) {
+
+    // TODO:Développer la fonction permettant de mettre à jour la quantité
+    console.log(lsKey, productId, productColor, productQantity);
+    return;
 
 }
 
@@ -342,8 +362,38 @@ function insertItems(products) {
                     productQuantityInputNode.classList.add('itemQuantity');
                     productQuantityInputNode.addEventListener('input', (event) => {
 
-                        // TODO:Développer la fonction permettant de mettre à jour la quantité
-                        alert('TODO:Développer la fonction permettant de mettre à jour la quantité');
+                        // *** Vérifie la validité de la quantité renseignée ***
+                        // * si la valeur est une chaine vide, on attend 2 secondes pour que l'utilisateur puisse remettre une valeur
+                        // * si la valeur est incorrecte (caractère non numérique, ou valeur inférieure à égale à 0, ou supérieure à 100), on remet en place la valeur précédente
+                        let quantity = parseInt(event.target.value);
+
+                        if(typeof(quantityTimeout) === 'number') clearTimeout(quantityTimeout); // Reset le timeout potentiellement lancé par l'étage ci-dessous
+                        if(event.data === null) { // valeur vide
+
+                            console.warn('Valeur vide');
+                            quantityTimeout = setTimeout(() => {
+
+                                alert('Merci de renseigner une quantité comprise entre 1 et 100.');
+                                event.target.value = cartContent[product._id][colorIndex];
+
+                            }, 2000);
+
+                            return;
+                        }
+
+                        if(isNaN(quantity) || quantity <= 0 || quantity > 100) { // La valeur du champ est une chaine de caractère || inférieure ou égale à 0 || supérieure à 100
+
+                            alert('Merci de renseigner une quantité comprise entre 1 et 100.');
+                            event.target.value = cartContent[product._id][colorIndex];
+                            return;
+
+                        }
+
+                        // La quantité renseignée est valide, on met à jour le tableau "cartContent" ainsi que le panier dans le localStorage
+                        cartContent[product._id][colorIndex] = quantity;
+                        let productArticle = event.target.closest('article.cart__item'); // Récupère les données du produit en retrouvant le bloc "<article>" parent via la fonction "closest()"
+                        updateProductQuantity(productArticle.getAttribute('data-id'), productArticle.getAttribute('data-color').toLowerCase(), quantity);
+                        return;
 
                     });
 
