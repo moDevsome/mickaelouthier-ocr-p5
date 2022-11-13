@@ -409,7 +409,7 @@ function updateCartProductQuantity(event) {
     let quantity = parseInt(event.target.value);
 
     if(typeof(quantityTimeout) === 'number') clearTimeout(quantityTimeout); // Reset le timeout potentiellement lancé par l'étage ci-dessous
-    if(event.data === null) { // valeur vide
+    if(event.data === null && event.target.value.length === 0) { // Le contenu du champ est vide, cela peut intervenir dans le cas d'une supression du contenu du champ.
 
         console.warn('Valeur vide');
         quantityTimeout = setTimeout(() => {
