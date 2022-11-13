@@ -104,7 +104,8 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 }
 
 /**
- * Insère les information détaillée du produit dans le DOM
+ * ------------------------------------------------------------
+ * Insertion des informations détaillées du produit dans le DOM
  * @retun void
  */
  function insertProduct(product, inputQuantityMin) {
@@ -114,6 +115,9 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
         /**
          * Insertion des détails du produit
          */
+
+        // Gestion de la balise <title>
+        document.getElementsByTagName('title')[0].textContent = product.name;
 
         // Gestion de l'image du produit <img>
         let productImgNode = document.createElement('img');
@@ -160,7 +164,9 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 }
 
 /**
+ * --------------------------------------------------------------------------------------------------------
  * Récupère les informations détaillées du produit à partir de la valeur du paramètre ID présent dans l'URL
+ *
  * @return Object Un objet contenant les informations OU FALSE si une erreur survient
  */
 async function getProduct() {
@@ -261,7 +267,9 @@ async function getProduct() {
 }
 
 /**
+ * -------------------------------------------------------------------------
  * Récupère les informations détaillées du produit et les insère dans le DOM
+ *
  * @retun void
  */
  async function load() {
