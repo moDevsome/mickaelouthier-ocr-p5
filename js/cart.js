@@ -3,6 +3,26 @@
  */
 const localStorageKey = 'kanap-cart';
 
+/** Erreur générique affichée suite à une erreur système (un parse ou un fetch KO par exemple...) */
+const genericError = 'L\'application a rencontré une erreur et n\'a pas pu effectuer l\'action recquise, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.';
+
+/** Caractère permettant de faire le "join" sur le tableau "colorData" */
+const colorDataJoin = '|';
+
+/**
+ * ------------------------------------
+ * Gestion du cas où le panier est vide
+ *
+ * @return void
+ */
+function emptyCartRedirect() {
+
+    alert('Votre panier est vide, merci de placer un ou plusieurs canapé(s) dans votre panier afin de passer votre commande.');
+    document.location.href = './index.html';
+    return;
+
+}
+
 /**
  * ---------------------------------------------------
  * Récupère les produits présents dans le localStorage
@@ -30,8 +50,6 @@ function getLocalCart() {
     return cartProducts;
 }
 
-/** Erreur générique affichée suite à une erreur système (un parse ou un fetch KO par exemple...) */
-const genericError = 'L\'application a rencontré une erreur et n\'a pas pu effectuer l\'action recquise, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.';
 
 
 /**
@@ -283,6 +301,95 @@ async function orderSubmit() {
 }
 
 /**
+ * ---------------------------------------------------
+ * Fonction permettant de retirer un produit du panier
+ *
+ * @param Event event "Évenement déclenché suite au click sur le bouton SUPPRIMER (p.deleteItem)"
+ * @return void
+ */
+ function deleteCartProduct(event) {
+
+    // Récupère les données du produit en retrouvant le bloc "<article>" parent via la fonction "closest()"
+    let productArticle = event.target.closest('article.cart__item');
+    let productId = productArticle.getAttribute('data-id');
+    let colorDataString = productArticle.getAttribute('data-color');
+    let colorData = colorDataString.split(colorDataJoin);
+    let color = colorData[0];
+
+    // ** Petit bonus par rapport à la spec, on demande une confirmation **
+    let confirmMessage = 'Confirmez-vous le retrait du canapé "'+ products[productId]['infos'].name +'" de couleur "'+ colorData[1] +'" ?';
+    if(confirm(confirmMessage) === false) {
+
+        return;
+
+    }
+
+    // ** Retire l'objet du panier**
+    // - si le produit n'est présent que dans une seule couleur, on le retire complètement (variable totalRemove = TRUE)
+    // - si le produit est présent dans plusieurs couleurs, on retire uniquement la couleur en question
+    let totalRemove = Object.keys(products[productId]['quantity']).length === 1; // totalRemove = true si une seule couleur
+
+    // Retire le produit de l'objet "products"
+    // https://www.w3schools.com/howto/howto_js_remove_property_object.asp
+    if(totalRemove === true) {
+
+        delete products[productId];
+
+    }
+    else {
+
+        delete products[productId]['quantity'][color];
+
+    }
+
+    // Mise à jour du panier dans le localStorage
+    let currentCartProducts = getLocalCart();
+    if(totalRemove === true) {
+
+        delete currentCartProducts[productId];
+
+    }
+    else {
+
+        delete currentCartProducts[productId][color];
+
+    }
+
+    try {
+
+        // Si le panier ne contient plus de produit, alors on supprime complètement le record du site
+        if(Object.keys(currentCartProducts).length > 0) {
+
+            localStorage.setItem(localStorageKey, JSON.stringify(currentCartProducts));
+
+        }
+        else {
+
+            localStorage.removeItem(localStorageKey);
+            emptyCartRedirect();
+
+        }
+
+    }
+    catch(error) {
+
+        console.error(error);
+        alert(genericError);
+        return;
+
+    }
+
+    // Mise à jour du panier HTML
+    document.getElementById('cart__items').removeChild( document.querySelector('article[data-id="'+ productId +'"][data-color="'+ colorDataString +'"]') );
+
+    // Mise à jour du prix et de la quantité total
+    updateTotalPrice();
+
+    return;
+
+ }
+
+/**
  * ----------------------------------------------------------------------------
  * Fonction permettant de mettre à jour la quantité d'un produit dans le panier
  *
@@ -294,7 +401,7 @@ function updateCartProductQuantity(event) {
     // Récupère les données du produit en retrouvant le bloc "<article>" parent via la fonction "closest()"
     let productArticle = event.target.closest('article.cart__item');
     let productId = productArticle.getAttribute('data-id');
-    let color = productArticle.getAttribute('data-color');
+    let color = productArticle.getAttribute('data-color').split(colorDataJoin)[0];
 
     // *** Vérifie la validité de la quantité renseignée ***
     // * si la valeur est une chaine vide, on attend 2 secondes pour que l'utilisateur puisse remettre une valeur
@@ -326,7 +433,7 @@ function updateCartProductQuantity(event) {
     // La quantité renseignée est valide, on met à jour l'objet "products"
     products[productId]['quantity'][color] = quantity;
 
-    // On met les données dans le localStorage
+    // Mise à jour du panier dans le localStorage
     let currentCartProducts = getLocalCart();
     currentCartProducts[productId][color] = quantity;
     try {
@@ -342,10 +449,10 @@ function updateCartProductQuantity(event) {
 
     }
 
-    // On met à jour le HTML du panier
+    // Mise à jour du panier HTML
     setCartProductNode(products[productId], color);
 
-    // On met à jour le prix total
+    // Mise à jour du prix et de la quantité total
     updateTotalPrice();
 
     return;
@@ -365,6 +472,21 @@ function setCartProductNode(productData, color) {
     let product = productData['infos'];
     let cartSection = document.getElementById('cart__items');
 
+    // Gestion de la couleur
+    // On stock la valeur sélectionnée et la valeur textuelle dans un tableau que l'on join avec le caractère"|"
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
+    let colorTextFindPredicat = (colorText) => {
+        return colorText === color.substring(0, 1).toUpperCase() + color.substring(1, color.length);
+    };
+    let colorData = [ color, product.colors.find( colorTextFindPredicat ) ?? ''];
+    if(colorData[1].length === 0) { // La couleur n'a pas été trouvée dans l'Array
+
+        throw 'Corresponsdance inexistante dans le tableau "colors" pour la valeur "'+ color +'"';
+        return;
+
+    }
+    let colorDataString = colorData.join('|');
+
     // Gestion de l'image du produit <img> dans une <div> .cart__item__img
     let productImgNode = document.createElement('img');
     productImgNode.src = product.imageUrl;
@@ -379,7 +501,7 @@ function setCartProductNode(productData, color) {
 
     // Gestion de la couleur du produit <p>
     let productColorNode = document.createElement('p');
-    productColorNode.textContent = color.substring(0, 1).toUpperCase() + color.substring(1, color.length);
+    productColorNode.textContent = colorData[1];
 
     // Gestion du prix <p>
     let productPriceNode = document.createElement('p');
@@ -416,12 +538,7 @@ function setCartProductNode(productData, color) {
     let productDeleteNode = document.createElement('p');
     productDeleteNode.classList.add('deleteItem');
     productDeleteNode.textContent = 'Supprimer';
-    productDeleteNode.addEventListener('click', (event) => {
-
-        // TODO:Développer la fonction permettant de retirer le panier du produit
-        alert('TODO:Développer la fonction permettant de retirer le produit du panier');
-
-    });
+    productDeleteNode.addEventListener('click', event => deleteCartProduct(event));
 
     // Gestion du parent du bouton Supprimmer <div> .cart__item__content__settings__delete
     let productDeleteParentNode = document.createElement('div');
@@ -444,11 +561,11 @@ function setCartProductNode(productData, color) {
     let productNode = document.createElement('article');
     productNode.classList.add('cart__item');
     productNode.dataset.id = product._id;
-    productNode.dataset.color = color;
+    productNode.dataset.color = colorDataString;
     productNode.appendChild(productImgParentNode);
     productNode.appendChild(productContentNode);
 
-    let currentNode = document.querySelector('article[data-id="'+ product._id +'"][data-color="'+ color +'"]');
+    let currentNode = document.querySelector('article[data-id="'+ product._id +'"][data-color="'+ colorDataString +'"]');
     if(currentNode === null) { // Insertion d'un nouveau node
 
         cartSection.appendChild(productNode);
@@ -486,7 +603,7 @@ function setCartProductNode(productData, color) {
  * -- -- -- colors: Array
  * -- -- -- -- [color]
  *
- * @return Promise "resolved => On retourne un objet contenant la liste des produits OU un tableau vide en cas d'échec si le panier est vide"
+ * @return Promise "resolved => On retourne un objet contenant la liste des produits OU un tableau vide si le panier est vide"
  */
  async function loadCartProducts() {
 
@@ -580,9 +697,7 @@ async function load() {
             // Si le panier est vide, on redirige l'utilisateur vers la page d'accueil
             if(Object.keys(loadedProducts).length === 0) {
 
-                alert('Votre panier est vide, merci de placer un ou plusieurs canapé(s) dans votre panier afin de passer votre commande.');
-                document.location.href = './index.html';
-                return;
+                emptyCartRedirect();
 
             }
             else {
