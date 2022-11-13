@@ -53,8 +53,9 @@ function getLocalCart() {
 
 
 /**
- * FONCTION A METTRE EN IMPORT
+ * ------------------------------------------------------------------
  * Supprime le panier courant en retirant les données du localStorage
+ *
  * @return void
  */
  function deleteCart() {
@@ -66,7 +67,8 @@ function getLocalCart() {
     }
     catch(error) {
 
-        console.error('catch error in deleteCart() => '+ error);
+        console.error('catch error in deleteCart\n'+ error);
+        alert(genericError);
 
     }
 
@@ -107,8 +109,10 @@ function hasSpecialChar(string_to_test, exclude) {
 }
 
 /**
+ * ---------------------------------
  * Procède à la validation du panier
- * Si les champs sont validés et que la commande est bien traitée par l'API, l'utilisateur est redirigé
+ * Si les champs sont validés et que la commande est bien traitée par l'API, l'utilisateur est redirigé vers la page de confirmation.
+ *
  * @return void
  */
 async function orderSubmit() {
@@ -192,27 +196,16 @@ async function orderSubmit() {
 
     });
 
-    // Vérifie si le panier contient des élements
-    try {
+    if(hasError === true) return;
 
-        cartProductsList = Object.keys(selectCart());
+    // Créer l'Array products
+    let productsArray = Object.keys(products);
+    if(productsArray.length === 0) { // le panier est vide
 
-    }
-    catch(error) {
-
-        alert(error);
+        emptyCartRedirect();
         return;
 
     }
-
-    if(cartProductsList.length === 0) {
-
-        alert('Merci de sélectionner au moins un produit à commander.');
-        hasError = true;
-
-    }
-
-    if(hasError === true) return;
 
     // La commande est envoyée à l'API pour validation
     fetch('http://localhost:3000/api/products/order', {
@@ -222,7 +215,7 @@ async function orderSubmit() {
             },
             body: JSON.stringify({
                 contact: contactObject,
-                products: cartProductsList
+                products: productsArray
             })
         })
         .then((response) => {
