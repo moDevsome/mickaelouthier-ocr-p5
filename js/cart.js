@@ -487,13 +487,14 @@ function setCartProductNode(productData, color) {
     // On stock la valeur sélectionnée et la valeur textuelle dans un tableau que l'on join avec le caractère"|"
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
     let colorTextFindPredicat = (colorText) => {
-        return colorText === color.substring(0, 1).toUpperCase() + color.substring(1, color.length);
+
+        return color === colorText.toLowerCase();
+
     };
     let colorData = [ color, product.colors.find( colorTextFindPredicat ) ?? ''];
     if(colorData[1].length === 0) { // La couleur n'a pas été trouvée dans l'Array
 
         throw 'Corresponsdance inexistante dans le tableau "colors" pour la valeur "'+ color +'"';
-        return;
 
     }
     let colorDataString = colorData.join('|');
