@@ -196,6 +196,13 @@ async function orderSubmit() {
 
     });
 
+    // Vérification des champs "Qté" (dans le cas où l'utilisateur clique sur le bouton "Commander" dans les 2 secondes après avoir vidé un champ)
+    document.querySelectorAll('input.itemQuantity').forEach(input => {
+
+        if(input.value.length === 0) hasError = true;
+
+    });
+
     if(hasError === true) return;
 
     // Créer l'Array products
