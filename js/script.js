@@ -1,5 +1,7 @@
 /**
+ * -------------------------------
  * Insère les produits dans le DOM
+ *
  * @retun void
  */
 function insertProducts(products) {
@@ -42,11 +44,14 @@ function insertProducts(products) {
         });
     }
 
+    return;
 }
 
 /**
+ * ------------------------------
  * Récupère la liste des produits
- * @return Array Un tableau contenant la liste des produits OU un tableau vide en cas d'échec
+ *
+ * @return Array Un tableau contenant la liste des produits
  */
 async function getProducts() {
 
@@ -94,26 +99,32 @@ async function getProducts() {
             }
 
         })
-        .catch((e) => {
+        .catch((error) => {
 
-            let errorMessage = '--- Echec de la récupération des produits. ---';
-            console.error(errorMessage.concat("\n", e));
-
-            return [];
+            let errorMessage = 'Echec de la récupération des produits via l\'API.';
+            throw errorMessage.concat("\n", e);
 
         });
 
 }
 
 /**
+ * --------------------------------------------------------
  * Récupère la liste des produits et les insère dans le DOM
  * @retun void
  */
 async function load() {
 
-    let products = await getProducts();
-    insertProducts(products);
+    getProducts()
+        .then((products) => insertProducts(products))
+        .catch((error) => {
 
+            console.log(error);
+            alert('L\'application a rencontré une erreur et n\'a pas pu effectuer l\'action recquise, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.');
+
+        });
+
+    return;
 }
 
 load();
