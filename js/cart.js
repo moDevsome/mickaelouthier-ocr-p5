@@ -450,7 +450,18 @@ function updateCartProductQuantity(event) {
     }
 
     // Mise à jour du panier HTML
-    setCartProductNode(products[productId], color);
+    try { // securisation suite à l'ajout du script de gestion de la couleur dans "setCartProductNode"
+
+        setCartProductNode(products[productId], color);
+
+    }
+    catch(error) {
+
+        console.error(error);
+        alert(genericError);
+        return;
+
+    }
 
     // Mise à jour du prix et de la quantité total
     updateTotalPrice();
