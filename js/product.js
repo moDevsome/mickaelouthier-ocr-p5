@@ -1,5 +1,10 @@
+/** Erreur générique affichée suite à une erreur système (un parse ou un fetch KO par exemple...) */
+const genericError = 'L\'application a rencontré une erreur et n\'a pas pu effectuer l\'action recquise, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.';
+
 /**
+ * --------------------------------------------------------------------------------------------------------------------------
  * Ajoute le produit dans le panier après validation de la quantité, puis redirige l'utilisateur vers la page de confirmation
+ *
 * @retun void
  */
 function submitProduct(product, inputQuantityMin, inputQuantityMax) {
@@ -92,7 +97,7 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 
             console.error(error);
             alert('L\'application a rencontré une erreur et n\'a pas pu mettre votre panier à jour, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à réessayer l\'opération ultérieurement.');
-            // TODO:ajouter un returns
+            return;
 
         }
 
@@ -101,6 +106,7 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 
     }
 
+    return;
 }
 
 /**
@@ -161,23 +167,21 @@ function submitProduct(product, inputQuantityMin, inputQuantityMax) {
 
     }
 
+    return;
 }
 
 /**
  * --------------------------------------------------------------------------------------------------------
  * Récupère les informations détaillées du produit à partir de la valeur du paramètre ID présent dans l'URL
  *
- * @return Object Un objet contenant les informations OU FALSE si une erreur survient
+ * @return Object Un objet contenant les informations
  */
 async function getProduct() {
-
-    const errorTitle = '--- Echec de la récupération des informations du produit via la fonction getProduct() ---\n';
 
     let urlSearchParams = new URLSearchParams(document.location.search);
     if(!urlSearchParams.has('id')) {
 
-        console.error(errorTitle +'"urlSearchParams.has(\'id\')" retourne FALSE. Le paramètre ID est absent de l\'URL du document.');
-        return false;
+        throw '"urlSearchParams.has(\'id\')" retourne FALSE. Le paramètre ID est absent de l\'URL du document';
 
     }
 
@@ -257,10 +261,9 @@ async function getProduct() {
             }
 
         })
-        .catch((e) => {
+        .catch((error) => {
 
-            console.error(errorTitle + e);
-            return false;
+            throw(error);
 
         });
 
@@ -287,19 +290,29 @@ async function getProduct() {
 
     }
 
-    const product = await getProduct();
-    insertProduct(product, inputQuantityMin);
+    getProduct()
+        .then((product) => {
 
-    // On ajoute un écouteur d'évenement de type "click" sur le bouton button#addToCart
-    // le clic va déclencher l'ajout du produit dans le panier via la fonction "submitProduct"
-    document.getElementById('addToCart').addEventListener('click', (event) => {
+            insertProduct(product, inputQuantityMin);
 
-        event.stopPropagation();
-        event.preventDefault();
-        submitProduct(product, inputQuantityMin, inputQuantityMax);
+            // On ajoute un écouteur d'évenement de type "click" sur le bouton button#addToCart
+            // le clic va déclencher l'ajout du produit dans le panier via la fonction "submitProduct"
+            document.getElementById('addToCart').addEventListener('click', (event) => {
 
-        return false;
-    })
+                event.stopPropagation();
+                event.preventDefault();
+                submitProduct(product, inputQuantityMin, inputQuantityMax);
+
+                return false;
+            })
+
+        })
+        .catch((error) => {
+
+            console.error(error);
+            alert(genericError);
+
+        })
 
 }
 
