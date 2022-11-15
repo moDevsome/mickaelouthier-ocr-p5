@@ -9,6 +9,10 @@ const genericError = 'L\'application a rencontré une erreur et n\'a pas pu effe
 /** Caractère permettant de faire le "join" sur le tableau "colorData" */
 const colorDataJoin = '|';
 
+/** Définis la quantité minimum et la quantité maximum pouvant être commandé */
+const minQuantity = 1;
+const maxQuantity = 100;
+
 /**
  * ------------------------------------
  * Gestion du cas où le panier est vide
@@ -407,6 +411,7 @@ function updateCartProductQuantity(event) {
     // * si la valeur est une chaine vide, on attend 2 secondes pour que l'utilisateur puisse remettre une valeur
     // * si la valeur est incorrecte (caractère non numérique, ou valeur inférieure à égale à 0, ou supérieure à 100), on remet en place la valeur précédente
     let quantity = parseInt(event.target.value);
+    let quantityError = 'Merci de renseigner une quantité comprise entre '+ minQuantity +' et '+ maxQuantity +'.';
 
     if(typeof(quantityTimeout) === 'number') clearTimeout(quantityTimeout); // Reset le timeout potentiellement lancé par l'étage ci-dessous
     if(event.data === null && event.target.value.length === 0) { // Le contenu du champ est vide, cela peut intervenir dans le cas d'une supression du contenu du champ.
@@ -414,7 +419,7 @@ function updateCartProductQuantity(event) {
         console.warn('Valeur vide');
         quantityTimeout = setTimeout(() => {
 
-            alert('Merci de renseigner une quantité comprise entre 1 et 100.');
+            alert(quantityError);
             event.target.value = products[productId]['quantity'][color];
 
         }, 2000);
@@ -422,9 +427,9 @@ function updateCartProductQuantity(event) {
         return;
     }
 
-    if(isNaN(quantity) || quantity <= 0 || quantity > 100) { // La valeur du champ est une chaine de caractère || inférieure ou égale à 0 || supérieure à 100
+    if(isNaN(quantity) || quantity < minQuantity || quantity > maxQuantity) { // La valeur du champ est une chaine de caractère || inférieure ou égale à 0 || supérieure à 100
 
-        alert('Merci de renseigner une quantité comprise entre 1 et 100.');
+        alert(quantityError);
         event.target.value = products[productId]['quantity'][color];
         return;
 
@@ -534,8 +539,8 @@ function setCartProductNode(productData, color) {
     let productQuantityInputNode = document.createElement('input');
     productQuantityInputNode.type = 'number';
     productQuantityInputNode.name = 'itemQuantity';
-    productQuantityInputNode.min = 1;
-    productQuantityInputNode.max = 100;
+    productQuantityInputNode.min = minQuantity;
+    productQuantityInputNode.max = maxQuantity;
     productQuantityInputNode.value = productData['quantity'][color];
     productQuantityInputNode.classList.add('itemQuantity');
     productQuantityInputNode.addEventListener('input', event => updateCartProductQuantity(event));
