@@ -2,6 +2,7 @@
  * -------------------------------
  * Insère les produits dans le DOM
  *
+ * @param Array products "Tableau contenant les produits"
  * @retun void
  */
 function insertProducts(products) {
@@ -102,7 +103,7 @@ async function getProducts() {
         .catch((error) => {
 
             let errorMessage = 'Echec de la récupération des produits via l\'API.';
-            throw errorMessage.concat("\n", e);
+            throw errorMessage.concat("\n", error);
 
         });
 
@@ -119,7 +120,7 @@ async function load() {
         .then((products) => insertProducts(products))
         .catch((error) => {
 
-            console.log(error);
+            console.error(error);
             alert('L\'application a rencontré une erreur et n\'a pas pu effectuer l\'action recquise, nous vous prions de nous excuser pour ce désagrément et nous vous invitons à renouveler l\'opération ultérieurement.');
 
         });
