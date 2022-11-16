@@ -54,8 +54,6 @@ function getLocalCart() {
     return cartProducts;
 }
 
-
-
 /**
  * ------------------------------------------------------------------
  * Supprime le panier courant en retirant les données du localStorage
@@ -81,38 +79,6 @@ function getLocalCart() {
 }
 
 /**
- * ----------------------------------------------------------------------------------
- * Fonction permettant de vérifier la présence de caractères spéciaux dans une chaine
- * L'array exclude permet de spécifier des caractères à ignorer
- *
- * @param String string_to_test "La chaine de caractère à tester"
- * @param Array exclude "Array contenant un ou plusieurs caractères à exclure du processus de vérification"
- * @return Bool "TRUE si la chaine à tester contient au moins un caractère spécial, sinon FALSE"
- */
-function hasSpecialChar(string_to_test, exclude) {
-
-    let pattern = '!"\'#$€µ£%&()*+,./:;<=>-?§@^¨_`°{|}~ ][\\';
-
-    // Gestion des caractères à exclure du processus de vérification
-    let excludeList = exclude ?? [];
-
-    // On parcours le pattern en recherchant chaque caractère dans la chaine à tester
-    let hasMatch = false;
-    pattern.split('').forEach(char => {
-
-        if(!excludeList.includes(char) && string_to_test.includes(char)) {
-
-            hasMatch = true;
-
-        }
-
-    });
-
-    return hasMatch;
-
-}
-
-/**
  * ---------------------------------
  * Procède à la validation du panier
  * Si les champs sont validés et que la commande est bien traitée par l'API, l'utilisateur est redirigé vers la page de confirmation.
@@ -125,9 +91,6 @@ async function orderSubmit() {
     let contactObject = {};
 
     // Vérification des champs du formulaire de contact
-    /**
-     * Les caractères spéciaux sont vérifiés via la fonction "hasSpecialChar"
-     */
     const errorMessage = {
         firstName: 'Le champ Prénom ne doit pas être vide et ne doit pas contenir de chiffre ni de caractère spécial.',
         lastName: 'Le champ Nom ne doit pas être vide et ne doit pas contenir de chiffre ni de caractère spécial.',
@@ -137,66 +100,64 @@ async function orderSubmit() {
     }
 
     let hasError = false;
-    document.querySelectorAll('form.cart__order__form input').forEach(field => {
+    document.querySelectorAll('form.cart__order__form > div.cart__order__form__question > input').forEach(field => {
 
         // Reset le contenu du <p> du message d'erreur avant vérification
         let fieldErrorMsgNode = document.getElementById(field.name +'ErrorMsg') ?? {};
         fieldErrorMsgNode.textContent = '';
 
-        switch(field.name) {
+        if(field.name === 'email') {
 
-            case 'firstName' :
-            case 'lastName' :
-            case 'city' :
-                // On autorise uniquement les lettres de l'alphabet, les apostrophes, les espaces et les tirets
-                if(field.value.length === 0 || (field.value.match('[0-9]') ?? []).length > 0 || hasSpecialChar(field.value, ['\'','-',' '])) {
+            /*
+            => On autorise uniquement les lettres de l'alphabet, les chiffres, les tirets, les underscores, les points et les arobase
+                le caractère "@" doit être présent qu'une seul fois
+                le caractère "." doit être présent au moins une fois
+            */
 
-                    fieldErrorMsgNode.textContent = errorMessage[field.name];
-                    hasError = true;
+            let regxpEmail = new RegExp('([a-zA-Z]|[0-9]|[à-ü]|[À-Ü]|[-]|[_]|[.]|[@])','g');
+            if(field.value.length === 0
+                || (field.value.match(regxpEmail).length !== field.value.length)
+                || (field.value.match(new RegExp('[@]', 'g')) ?? []).length !== 1
+                || (field.value.match(new RegExp('[.]', 'g')) ?? []).length < 1) {
 
-                }
-                else {
+                fieldErrorMsgNode.textContent = errorMessage[field.name];
+                hasError = true;
 
-                    contactObject[field.name] = field.value;
+            }
+            else {
 
-                }
-                break;
+                contactObject['email'] = field.value;
 
-            case 'address' :
-                // On vérifie si la chaine contient des caractères spéciaux en excluant les apostrophes, les espaces et les tirets
-                if(field.value.length === 0 || hasSpecialChar(field.value, ['\'','-',' ','°'])) {
-
-                    fieldErrorMsgNode.textContent = errorMessage[field.name];
-                    hasError = true;
-
-                }
-                else {
-
-                    contactObject['address'] = field.value;
-
-                }
-                break;
-
-            case 'email' :
-                // On vérifie si le caractères "@" se trouve 1 fois dans la chaine, on vérifie également les caractères spéciaux en excluant les tirets, les underscores et les points
-                if(field.value.length === 0 || (field.value.split('@') ?? []).length !== 2 || hasSpecialChar(field.value, ['@','-','_','.'])) {
-
-                    fieldErrorMsgNode.textContent = errorMessage[field.name];
-                    hasError = true;
-
-                }
-                else {
-
-                    contactObject['email'] = field.value;
-
-                }
-                break;
-
-            default :
-                // Ne rien faire
-                break;
+            }
 
         }
+        else {
+
+            /*
+            case 'firstName'
+            case 'lastName'
+            case 'city'
+            case 'address'
+            => On autorise uniquement les lettres de l'alphabet, les apostrophes, les espaces et les tirets
+            => on autorise également les chiffres si il s'agit du champ "Adresse"
+            */
+
+            let regxp = new RegExp(field.name === 'address' ? '([a-zA-Z]|[ ]|[0-9]|[à-ü]|[À-Ü]|[-]|[\'])' : '([a-zA-Z]|[ ]|[à-ü]|[À-Ü]|[-]|[\'])','g');
+            if(field.value.length === 0 || (field.value.match(regxp).length !== field.value.length)) {
+
+                fieldErrorMsgNode.textContent = errorMessage[field.name];
+                hasError = true;
+
+            }
+            else {
+
+                contactObject[field.name] = field.value;
+
+            }
+
+        }
+
+        console.log(field.name, hasError);
 
     });
 
