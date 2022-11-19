@@ -245,7 +245,7 @@ async function orderSubmit() {
  *
  * @return void
  */
- function updateTotalPrice() {
+ function updateCartTotal() {
 
     let totalQuantity = 0;
     let totalPrice = 0;
@@ -349,7 +349,7 @@ async function orderSubmit() {
     document.getElementById('cart__items').removeChild( document.querySelector('article[data-id="'+ productId +'"][data-color="'+ colorDataString +'"]') );
 
     // Mise à jour du prix et de la quantité total
-    updateTotalPrice();
+    updateCartTotal();
 
     return;
 
@@ -431,7 +431,7 @@ function updateCartProductQuantity(event) {
     }
 
     // Mise à jour du prix et de la quantité total
-    updateTotalPrice();
+    updateCartTotal();
 
     return;
 
@@ -684,7 +684,7 @@ async function load() {
                 products = loadedProducts;
 
                 // Tous les produits ont été insérés, on met à jour la quantité et le prix total
-                updateTotalPrice();
+                updateCartTotal();
 
                 document.getElementById('order').addEventListener('click', (event) => {
 
