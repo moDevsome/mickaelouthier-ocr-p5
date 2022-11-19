@@ -118,7 +118,9 @@ async function orderSubmit() {
             if(field.value.length === 0
                 || (field.value.match(regxpEmail).length !== field.value.length)
                 || (field.value.match(new RegExp('[@]', 'g')) ?? []).length !== 1
-                || (field.value.match(new RegExp('[.]', 'g')) ?? []).length < 1) {
+                || (field.value.indexOf('@') === 0 || field.value.indexOf('@') > field.value.lastIndexOf('.')) // Vérifie la position de l'arobase (si il est en début de chaine ou dans l'extension du domaine)
+                || ((field.value.match(new RegExp('[.]', 'g')) ?? []).length < 1 || field.value.lastIndexOf('.') >= (field.value.length - 2)) // Vérifie la position du point
+            ) {
 
                 fieldErrorMsgNode.textContent = errorMessage[field.name];
                 hasError = true;
@@ -156,8 +158,6 @@ async function orderSubmit() {
             }
 
         }
-
-        console.log(field.name, hasError);
 
     });
 
@@ -235,6 +235,7 @@ async function orderSubmit() {
 
         });
 
+        return;
 }
 
 
